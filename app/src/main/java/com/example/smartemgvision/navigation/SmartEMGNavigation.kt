@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.smartemgvision.IntelligentInteractionScreen
+import com.example.smartemgvision.ui.screens.SimulationScreen
 import com.example.smartemgvision.ui.screens.WelcomeScreen
 
 
@@ -22,9 +22,10 @@ fun SmartEMGNavigation(navController: NavHostController, modifier: Modifier = Mo
             )
         }
         composable(Routes.INTELLIGENT_INTERACTION) {
-            IntelligentInteractionScreen(
-                onBack = { navController.popBackStack() }
-            )
+            SimulationScreen(
+                onBack = { navController.popBackStack() },
+
+                )
         }
 
     }
