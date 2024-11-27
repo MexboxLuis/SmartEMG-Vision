@@ -22,10 +22,7 @@ fun SmartEMGNavigation(navController: NavHostController, modifier: Modifier = Mo
             )
         }
         composable(Routes.INTELLIGENT_INTERACTION) {
-            SimulationScreen(
-                onBack = { navController.popBackStack() },
-
-                )
+            SimulationScreen(onBack = { navController.popBackStack() })
         }
 
     }

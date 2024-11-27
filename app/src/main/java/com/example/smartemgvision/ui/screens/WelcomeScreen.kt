@@ -119,7 +119,7 @@ fun WelcomeScreen(onNavigateToInteraction: () -> Unit) {
         ) {
 
             Icon(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                painter = painterResource(id = R.drawable.img_logo_nbg),
                 contentDescription = "Smart EMG Vision",
                 modifier = Modifier
                     .size(150.dp)
@@ -131,7 +131,7 @@ fun WelcomeScreen(onNavigateToInteraction: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Smart Interaction System",
+                text = "Smart EMG Vision",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
