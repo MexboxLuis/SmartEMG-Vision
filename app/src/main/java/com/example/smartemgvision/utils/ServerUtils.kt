@@ -1,16 +1,16 @@
 package com.example.smartemgvision.utils
 
-import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
-fun sendFrameToServer(frame: ByteArray) {
+fun sendFrameToServer(frame: ByteArray, onResponse: (String) -> Unit) {
     val url = "http://10.0.2.2:5000/detect-objects"
     val client = OkHttpClient()
 
@@ -30,13 +30,18 @@ fun sendFrameToServer(frame: ByteArray) {
             val response = client.newCall(request).execute()
             if (response.isSuccessful) {
                 val body = response.body?.string()
-                Log.d("YOLODetection", "Server response: $body")
+                withContext(Dispatchers.Main) {
+                    onResponse(body ?: "No response body")
+                }
             } else {
-                Log.e("YOLODetection", "Error: ${response.message}")
+                withContext(Dispatchers.Main) {
+                    onResponse("Error: ${response.message}")
+                }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            withContext(Dispatchers.Main) {
+                onResponse("Exception: ${e.message}")
+            }
         }
     }
 }
-

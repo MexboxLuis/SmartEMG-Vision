@@ -7,7 +7,7 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 
 
-fun processImageProxy(imageProxy: ImageProxy) {
+fun processImageProxy(imageProxy: ImageProxy, onResponse: (String) -> Unit) {
     val buffer = imageProxy.planes[0].buffer
     val bytes = ByteArray(buffer.remaining())
     buffer.get(bytes)
@@ -27,7 +27,7 @@ fun processImageProxy(imageProxy: ImageProxy) {
     rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
     val jpegBytes = outputStream.toByteArray()
 
-    sendFrameToServer(jpegBytes)
+    sendFrameToServer(jpegBytes, onResponse)
 
     imageProxy.close()
 }
