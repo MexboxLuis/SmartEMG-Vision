@@ -8,13 +8,19 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,19 +35,61 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.smartemgvision.R
+import com.example.smartemgvision.model.BoxData
 import com.example.smartemgvision.ui.components.NoPermissionGranted
+import com.example.smartemgvision.ui.components.YoloDetections
 import com.example.smartemgvision.utils.processImageProxy
 import org.json.JSONObject
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
+
+val suggestionsBank = mapOf(
+    "person" to listOf(
+        "Say hello to that person.",
+        "Wave goodbye to that person.",
+        "Approach that person.",
+        "Point to that person."
+    ),
+    "bicycle" to listOf(
+        "Bring me that bicycle.",
+        "Take me to the bicycle.",
+        "Check the bicycle's condition.",
+        "Ask for a ride on the bicycle."
+    ),
+    "car" to listOf(
+        "Take me to the car.",
+        "Inspect the car for damage.",
+        "Point to the car.",
+        "Wave to the car owner."
+    ),
+    "dog" to listOf(
+        "Pet the dog.",
+        "Bring the dog closer.",
+        "Point to the dog.",
+        "Wave to the dog."
+    ),
+    "chair" to listOf(
+        "Bring me the chair.",
+        "Move the chair closer.",
+        "Point to the chair.",
+        "Sit on the chair."
+    ),
+    "bottle" to listOf(
+        "Bring me the bottle.",
+        "Open the bottle.",
+        "Point to the bottle.",
+        "Pass the bottle to someone."
+    )
+)
 
 @Composable
 fun SimulationScreen(onBack: () -> Unit) {
@@ -55,8 +103,9 @@ fun SimulationScreen(onBack: () -> Unit) {
     var serverResponse by remember { mutableStateOf("Waiting for response...") }
     var lastProcessedTime by remember { mutableLongStateOf(0L) }
     var isCameraInitialized by remember { mutableStateOf(false) }
-
+    var selectedLabel by remember { mutableStateOf<String?>(null) }
     val detections = remember { mutableStateOf(emptyList<BoxData>()) }
+    var actionMessage by remember { mutableStateOf("Waiting for action...") }
 
     LaunchedEffect(serverResponse) {
         try {
@@ -82,8 +131,10 @@ fun SimulationScreen(onBack: () -> Unit) {
                 )
             }
             detections.value = parsedDetections
+            selectedLabel = detections.value.firstOrNull()?.label
         } catch (e: Exception) {
             detections.value = emptyList()
+            selectedLabel = null
         }
     }
 
@@ -171,39 +222,88 @@ fun SimulationScreen(onBack: () -> Unit) {
                 }
             }
 
-            Column(
+            YoloDetections(
+                detections = detections.value,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(16.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
             ) {
-                detections.value.forEachIndexed { index, boxData ->
-                    Text(
-                        text = "${index + 1}. ${boxData.label} (${(boxData.confidence * 100).toInt()}%)",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                selectedLabel?.let { label ->
+                    val suggestions = suggestionsBank[label] ?: listOf("No suggestions available.")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Button(
+                            onClick = {
+                                actionMessage = suggestions.randomOrNull() ?: "No action defined."
+                            },
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(80.dp),
+                            shape = CircleShape,
+                            contentPadding = PaddingValues(0.dp),
+
+
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.img_tip),
+                                contentDescription = "Tip Image",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Button(
+                            onClick = {
+                                actionMessage = suggestions.randomOrNull() ?: "No action defined."
+                            },
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(80.dp),
+                            shape = CircleShape,
+                            contentPadding = PaddingValues(0.dp),
+
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.img_spherical),
+                                contentDescription = "Spherical Image",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Button(
+                            onClick = {
+                                actionMessage = suggestions.randomOrNull() ?: "No action defined."
+                            },
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .size(80.dp),
+                            shape = CircleShape,
+                            contentPadding = PaddingValues(0.dp),
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.img_lateral),
+                                contentDescription = "Lateral Image",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+
+
                 }
             }
 
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val canvasWidth = size.width
-                val canvasHeight = size.height
+            Text(
+                text = actionMessage,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(Alignment.Center)
+            )
 
-                detections.value.forEach { boxData ->
-                    drawRect(
-                        color = Color.Red,
-                        topLeft = androidx.compose.ui.geometry.Offset(
-                            x = (boxData.xMin * canvasWidth) / 1.5f,
-                            y = (boxData.yMin * canvasHeight) / 1.5f
-                        ),
-                        size = androidx.compose.ui.geometry.Size(
-                            width = ((boxData.xMax - boxData.xMin) * canvasWidth) / 1.5f,
-                            height = ((boxData.yMax - boxData.yMin) * canvasHeight) / 1.5f
-                        ),
-                        style = Stroke(width = 4.dp.toPx())
-                    )
-                }
-            }
 
             IconButton(
                 onClick = onBack,
@@ -221,14 +321,6 @@ fun SimulationScreen(onBack: () -> Unit) {
     }
 }
 
-data class BoxData(
-    val xMin: Float,
-    val yMin: Float,
-    val xMax: Float,
-    val yMax: Float,
-    val label: String,
-    val confidence: Float
-)
 
 
 
