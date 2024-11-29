@@ -8,12 +8,20 @@ import shutil
 
 app = Flask(__name__)
 model = YOLO('yolov8n.pt')
+
 image_counter = 1
 image_dir = "received_images"
+allowed_labels = [
+    "person", "spoon", "knife", "fork", "bottle", "cup", "bowl",
+    "apple", "banana", "sandwich", "broccoli", "orange", "carrot", "hot dog",
+    "pizza", "donut", "cake", "bench", "chair", "couch", "bed", "dining table"
+]
+
 
 def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 
+# Endpoint para detectar objetos
 @app.route('/detect-objects', methods=['POST'])
 def detect_objects():
     global image_counter
@@ -28,8 +36,10 @@ def detect_objects():
         file_bytes = file.read()
         print(f"Received data length: {len(file_bytes)}")
 
+        # Asegurarse de que el directorio existe
         os.makedirs(image_dir, exist_ok=True)
 
+        # Guardar la imagen con un nombre en orden
         filename = f"{image_counter}.jpg"
         filepath = os.path.join(image_dir, filename)
         image_counter += 1
@@ -38,6 +48,7 @@ def detect_objects():
             f.write(file_bytes)
         print(f"Imagen guardada como {filepath}")
 
+        # Leer la imagen y procesarla
         nparr = np.frombuffer(file_bytes, np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
@@ -47,12 +58,23 @@ def detect_objects():
         results = model(frame)
 
         detections = []
+        height, width, _ = frame.shape  # Dimensiones de la imagen original
         for result in results:
             for box in result.boxes:
+                label = result.names[int(box.cls)]  # Obtén el nombre de la etiqueta
+                if label not in allowed_labels:     # Filtra las etiquetas irrelevantes
+                    continue
+
+                x_min, y_min, x_max, y_max = box.xyxy[0].tolist()
                 detections.append({
-                    "label": result.names[int(box.cls)],
+                    "label": label,
                     "confidence": float(box.conf),
-                    "box": box.xyxy[0].tolist()
+                    "box": [
+                        x_min / width,  # Normalizar respecto al ancho
+                        y_min / height, # Normalizar respecto a la altura
+                        x_max / width,
+                        y_max / height
+                    ]
                 })
 
         return jsonify({"detections": detections}), 200
@@ -61,11 +83,13 @@ def detect_objects():
         print("Error:", str(e))
         return jsonify({"error": "Error procesando el frame."}), 500
 
+# Limpiar carpeta de imágenes al cerrar el servidor
 def cleanup():
     if os.path.exists(image_dir):
         shutil.rmtree(image_dir)
         print(f"Carpeta {image_dir} eliminada.")
 
+# Señal para capturar el cierre del servidor
 def handle_exit(_signal, _frame):
     print("\nCerrando servidor...")
     cleanup()
@@ -73,8 +97,10 @@ def handle_exit(_signal, _frame):
 
 
 if __name__ == '__main__':
+    # Limpiar consola
     clear_console()
 
+    # Registrar la señal para capturar interrupciones (Ctrl+C)
     signal.signal(signal.SIGINT, handle_exit)
     signal.signal(signal.SIGTERM, handle_exit)
 
