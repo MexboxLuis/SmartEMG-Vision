@@ -8,13 +8,20 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -35,9 +42,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -47,48 +58,40 @@ import com.example.smartemgvision.model.BoxData
 import com.example.smartemgvision.ui.components.NoPermissionGranted
 import com.example.smartemgvision.ui.components.YoloDetections
 import com.example.smartemgvision.utils.processImageProxy
+import kotlinx.coroutines.delay
 import org.json.JSONObject
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 
 val suggestionsBank = mapOf(
+    "utensils" to listOf(
+        "Use the :item.",
+        "Pass me the :item.",
+        "Put the :item away."
+    ),
+    "food" to listOf(
+        "Bring me the :item.",
+        "Pass me the :item.",
+        "Check the :item."
+    ),
     "person" to listOf(
-        "Say hello to that person.",
-        "Wave goodbye to that person.",
-        "Approach that person.",
-        "Point to that person."
+        "Say hello to :item.",
+        "Wave goodbye to :item.",
+        "Call :item.",
     ),
-    "bicycle" to listOf(
-        "Bring me that bicycle.",
-        "Take me to the bicycle.",
-        "Check the bicycle's condition.",
-        "Ask for a ride on the bicycle."
-    ),
-    "car" to listOf(
-        "Take me to the car.",
-        "Inspect the car for damage.",
-        "Point to the car.",
-        "Wave to the car owner."
-    ),
-    "dog" to listOf(
-        "Pet the dog.",
-        "Bring the dog closer.",
-        "Point to the dog.",
-        "Wave to the dog."
-    ),
-    "chair" to listOf(
-        "Bring me the chair.",
-        "Move the chair closer.",
-        "Point to the chair.",
-        "Sit on the chair."
-    ),
-    "bottle" to listOf(
-        "Bring me the bottle.",
-        "Open the bottle.",
-        "Point to the bottle.",
-        "Pass the bottle to someone."
+    "furniture" to listOf(
+        "Move the :item.",
+        "Use the :item.",
+        "Point to the :item."
     )
+)
+
+val itemGroups = mapOf(
+    "spoon" to "utensils", "knife" to "utensils", "fork" to "utensils", "bottle" to "utensils", "cup" to "utensils", "bowl" to "utensils",
+    "apple" to "food", "banana" to "food", "sandwich" to "food", "broccoli" to "food", "orange" to "food", "carrot" to "food", "hot dog" to "food", "pizza" to "food", "donut" to "food", "cake" to "food",
+    "person" to "person",
+    "bench" to "furniture", "chair" to "furniture", "couch" to "furniture", "bed" to "furniture", "dining table" to "furniture"
 )
 
 @Composable
@@ -105,7 +108,20 @@ fun SimulationScreen(onBack: () -> Unit) {
     var isCameraInitialized by remember { mutableStateOf(false) }
     var selectedLabel by remember { mutableStateOf<String?>(null) }
     val detections = remember { mutableStateOf(emptyList<BoxData>()) }
-    var actionMessage by remember { mutableStateOf("Waiting for action...") }
+    var actionMessage by remember { mutableStateOf("") }
+    var animateText by remember { mutableStateOf(false) }
+    var activeButton by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(key1 = actionMessage) {
+        if (actionMessage.isNotEmpty()) {
+            animateText = true
+            delay(5000)
+            activeButton = null
+            animateText = false
+            actionMessage = ""
+        }
+    }
+
 
     LaunchedEffect(serverResponse) {
         try {
@@ -234,75 +250,133 @@ fun SimulationScreen(onBack: () -> Unit) {
                     .align(Alignment.BottomCenter)
                     .padding(16.dp)
             ) {
-                selectedLabel?.let { label ->
-                    val suggestions = suggestionsBank[label] ?: listOf("No suggestions available.")
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Button(
-                            onClick = {
-                                actionMessage = suggestions.randomOrNull() ?: "No action defined."
-                            },
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .size(80.dp),
-                            shape = CircleShape,
-                            contentPadding = PaddingValues(0.dp),
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    val animatedBackgroundColor by animateColorAsState(
+                        targetValue = if (animateText) MaterialTheme.colorScheme.background else Color.Transparent,
+                        animationSpec = tween(durationMillis = 500), label = "Action"
+                    )
+
+                    Text(
+                        text = actionMessage,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontSize = 32.sp,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier
+                            .background(animatedBackgroundColor, shape = CircleShape)
+                            .padding(32.dp)
+                    )
+                    Spacer(modifier = Modifier.height(64.dp))
+
+                    selectedLabel?.let { label ->
+                        val group = itemGroups[label] ?: "unknown" // Get the group ("utensils", "food", etc.)
+                        val suggestions = suggestionsBank[group] ?: listOf("No suggestions available.")
 
 
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Image(
-                                painter = painterResource(R.drawable.img_tip),
-                                contentDescription = "Tip Image",
-                                modifier = Modifier.fillMaxSize()
+                            val tipSize by animateDpAsState(
+                                targetValue = if (activeButton == "Tip") 100.dp else 80.dp,
+                                animationSpec = tween(durationMillis = 300), label = "TipSize"
                             )
-                        }
-                        Button(
-                            onClick = {
-                                actionMessage = suggestions.randomOrNull() ?: "No action defined."
-                            },
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .size(80.dp),
-                            shape = CircleShape,
-                            contentPadding = PaddingValues(0.dp),
 
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.img_spherical),
-                                contentDescription = "Spherical Image",
-                                modifier = Modifier.fillMaxSize()
+                            Button(
+                                onClick = {
+                                    if (!animateText) {
+                                        val suggestion = suggestions[0]
+                                        actionMessage = suggestion.replace(":item", label)
+                                        activeButton = "Tip"
+                                    }
+                                },
+                                enabled = !animateText || activeButton == "Tip",
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .size(tipSize)
+                                    .then(
+                                        if (activeButton == "Tip" || !animateText) Modifier else Modifier.alpha(0f)
+                                    ),
+                                shape = CircleShape,
+                                contentPadding = PaddingValues(0.dp),
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.img_tip),
+                                    contentDescription = "Tip Image",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+
+                            val sphericalSize by animateDpAsState(
+                                targetValue = if (activeButton == "Spherical") 100.dp else 80.dp,
+                                animationSpec = tween(durationMillis = 300), label = "SphericalSize"
                             )
-                        }
-                        Button(
-                            onClick = {
-                                actionMessage = suggestions.randomOrNull() ?: "No action defined."
-                            },
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .size(80.dp),
-                            shape = CircleShape,
-                            contentPadding = PaddingValues(0.dp),
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.img_lateral),
-                                contentDescription = "Lateral Image",
-                                modifier = Modifier.fillMaxSize()
+
+                            Button(
+                                onClick = {
+                                    if (!animateText) {
+                                        val suggestion = suggestions[1]
+                                        actionMessage = suggestion.replace(":item", label) // Replace :item with the detected label
+                                        activeButton = "Spherical"
+                                    }
+                                },
+                                enabled = !animateText || activeButton == "Spherical",
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .size(sphericalSize)
+                                    .then(
+                                        if (activeButton == "Spherical" || !animateText) Modifier else Modifier.alpha(0f)
+                                    ),
+                                shape = CircleShape,
+                                contentPadding = PaddingValues(0.dp),
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.img_spherical),
+                                    contentDescription = "Spherical Image",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+
+                            val lateralSize by animateDpAsState(
+                                targetValue = if (activeButton == "Lateral") 100.dp else 80.dp,
+                                animationSpec = tween(durationMillis = 300), label = "LateralSize"
                             )
+
+                            Button(
+                                onClick = {
+                                    if (!animateText) {
+                                        val suggestion = suggestions[2]
+                                        actionMessage = suggestion.replace(":item", label) // Replace :item with the detected label
+                                        activeButton = "Lateral"
+                                    }
+                                },
+                                enabled = !animateText || activeButton == "Lateral",
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .size(lateralSize)
+                                    .then(
+                                        if (activeButton == "Lateral" || !animateText) Modifier else Modifier.alpha(0f)
+                                    ),
+                                shape = CircleShape,
+                                contentPadding = PaddingValues(0.dp),
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.img_lateral),
+                                    contentDescription = "Lateral Image",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
+
+
                     }
-
-
                 }
             }
-
-            Text(
-                text = actionMessage,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.align(Alignment.Center)
-            )
 
 
             IconButton(
