@@ -2,18 +2,17 @@ import org.apache.commons.math3.complex.Complex
 import org.apache.commons.math3.transform.DftNormalization
 import org.apache.commons.math3.transform.FastFourierTransformer
 import org.apache.commons.math3.transform.TransformType
-import kotlin.math.abs
 import kotlin.math.pow
 
 fun variationalModeDecomposition(
     x: DoubleArray,
     numIMFs: Int = 12,
-    alpha: Double = 4000.0,
+    alpha: Int = 4000,
     tau: Double = 0.0,
     dc: Boolean = false,
     init: Int = 1,
     tol: Double = 1e-7
-): Pair<Array<DoubleArray>, Array<Double>> {
+): Pair<Array<DoubleArray>, DoubleArray> {
     val saveT = x.size
 
     // Extender la señal por espejado
@@ -33,7 +32,7 @@ fun variationalModeDecomposition(
     val fHat = fft(fMirror)
     val fHatPlus = fHat.mapIndexed { index, value -> if (index < T / 2) Complex.ZERO else value }.toTypedArray()
 
-    val alphaArray = DoubleArray(numIMFs) { alpha }
+    val alphaArray = DoubleArray(numIMFs) { alpha.toDouble() }
     val uHatPlus = Array(numIMFs) { Array(T) { Complex.ZERO } }
     val omegaPlus = Array(numIMFs) { DoubleArray(T) }
 
@@ -86,7 +85,10 @@ fun variationalModeDecomposition(
         imfs[k] = ifft(uHatPlus[k]).take(saveT).map { it.real }.toDoubleArray()
     }
 
-    return Pair(imfs, omegaPlus.map { it[n] }.toTypedArray())
+    // Crear la matriz R (vacía, llena de ceros)
+    val R = DoubleArray(numIMFs) { 0.0 }
+
+    return Pair(imfs, R)
 }
 
 // Funciones auxiliares para FFT e IFFT usando Apache Commons Math
