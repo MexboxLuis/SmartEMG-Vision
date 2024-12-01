@@ -8,7 +8,7 @@ import kotlin.math.pow
 fun variationalModeDecomposition(
     x: DoubleArray,
     numIMFs: Int = 12,
-    alpha: Double = 2000.0,
+    alpha: Double = 4000.0,
     tau: Double = 0.0,
     dc: Boolean = false,
     init: Int = 1,
