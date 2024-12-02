@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -58,7 +60,9 @@ import com.example.smartemgvision.model.BoxData
 import com.example.smartemgvision.ui.components.NoPermissionGranted
 import com.example.smartemgvision.ui.components.YoloDetections
 import com.example.smartemgvision.utils.processImageProxy
+import com.example.smartemgvision.utils.sendKeywordToServer
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -88,14 +92,33 @@ val suggestionsBank = mapOf(
 )
 
 val itemGroups = mapOf(
-    "spoon" to "utensils", "knife" to "utensils", "fork" to "utensils", "bottle" to "utensils", "cup" to "utensils", "bowl" to "utensils",
-    "apple" to "food", "banana" to "food", "sandwich" to "food", "broccoli" to "food", "orange" to "food", "carrot" to "food", "hot dog" to "food", "pizza" to "food", "donut" to "food", "cake" to "food",
+    "spoon" to "utensils",
+    "knife" to "utensils",
+    "fork" to "utensils",
+    "bottle" to "utensils",
+    "cup" to "utensils",
+    "bowl" to "utensils",
+    "apple" to "food",
+    "banana" to "food",
+    "sandwich" to "food",
+    "broccoli" to "food",
+    "orange" to "food",
+    "carrot" to "food",
+    "hot dog" to "food",
+    "pizza" to "food",
+    "donut" to "food",
+    "cake" to "food",
     "person" to "person",
-    "bench" to "furniture", "chair" to "furniture", "couch" to "furniture", "bed" to "furniture", "dining table" to "furniture"
+    "bench" to "furniture",
+    "chair" to "furniture",
+    "couch" to "furniture",
+    "bed" to "furniture",
+    "dining table" to "furniture"
 )
 
 @Composable
 fun SimulationScreen(onBack: () -> Unit) {
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraExecutor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
@@ -112,6 +135,17 @@ fun SimulationScreen(onBack: () -> Unit) {
     var animateText by remember { mutableStateOf(false) }
     var activeButton by remember { mutableStateOf<String?>(null) }
 
+    var predictedClass by remember { mutableStateOf("") }
+    var predictedClassText by remember { mutableStateOf("") }
+
+    predictedClassText = when (predictedClass.toIntOrNull()) {
+        0 -> "Tip"
+        1 -> "Spherical"
+        2 -> "Lateral"
+        else -> ""
+    }
+
+
     LaunchedEffect(key1 = actionMessage) {
         if (actionMessage.isNotEmpty()) {
             animateText = true
@@ -119,6 +153,8 @@ fun SimulationScreen(onBack: () -> Unit) {
             activeButton = null
             animateText = false
             actionMessage = ""
+            predictedClass = ""
+            predictedClassText = ""
         }
     }
 
@@ -245,6 +281,28 @@ fun SimulationScreen(onBack: () -> Unit) {
                     .padding(16.dp)
             )
 
+            if (activeButton != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .background(
+                            if (predictedClassText == activeButton) Color.Green else Color.Red,
+                            shape = CircleShape
+                        )
+                ) {
+
+                    Text(
+                        text = if (predictedClassText == activeButton) "The prediction $predictedClassText is correct" else "The prediction $activeButton is incorrect \n ($predictedClassText)",
+                        color = Color.Black,
+                        modifier = Modifier
+                            .padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+
+
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -274,8 +332,10 @@ fun SimulationScreen(onBack: () -> Unit) {
                     Spacer(modifier = Modifier.height(64.dp))
 
                     selectedLabel?.let { label ->
-                        val group = itemGroups[label] ?: "unknown" // Get the group ("utensils", "food", etc.)
-                        val suggestions = suggestionsBank[group] ?: listOf("No suggestions available.")
+                        val group = itemGroups[label]
+                            ?: "unknown" // Get the group ("utensils", "food", etc.)
+                        val suggestions =
+                            suggestionsBank[group] ?: listOf("No suggestions available.")
 
 
                         Row(
@@ -290,9 +350,15 @@ fun SimulationScreen(onBack: () -> Unit) {
                             Button(
                                 onClick = {
                                     if (!animateText) {
-                                        val suggestion = suggestions[0]
-                                        actionMessage = suggestion.replace(":item", label)
-                                        activeButton = "Tip"
+                                        scope.launch {
+                                            val suggestion = suggestions[0]
+                                            actionMessage = suggestion.replace(":item", label)
+                                            activeButton = "Tip"
+                                            sendKeywordToServer(activeButton!!.lowercase()) { response ->
+                                                predictedClass = response
+                                            }
+                                            delay(1000)
+                                        }
                                     }
                                 },
                                 enabled = !animateText || activeButton == "Tip",
@@ -300,7 +366,9 @@ fun SimulationScreen(onBack: () -> Unit) {
                                     .padding(4.dp)
                                     .size(tipSize)
                                     .then(
-                                        if (activeButton == "Tip" || !animateText) Modifier else Modifier.alpha(0f)
+                                        if (activeButton == "Tip" || !animateText) Modifier else Modifier.alpha(
+                                            0f
+                                        )
                                     ),
                                 shape = CircleShape,
                                 contentPadding = PaddingValues(0.dp),
@@ -320,9 +388,18 @@ fun SimulationScreen(onBack: () -> Unit) {
                             Button(
                                 onClick = {
                                     if (!animateText) {
-                                        val suggestion = suggestions[1]
-                                        actionMessage = suggestion.replace(":item", label) // Replace :item with the detected label
-                                        activeButton = "Spherical"
+                                        scope.launch {
+                                            val suggestion = suggestions[1]
+                                            actionMessage = suggestion.replace(
+                                                ":item",
+                                                label
+                                            ) // Replace :item with the detected label
+                                            activeButton = "Spherical"
+                                            sendKeywordToServer(activeButton!!.lowercase()) { response ->
+                                                predictedClass = response
+                                            }
+                                            delay(1000)
+                                        }
                                     }
                                 },
                                 enabled = !animateText || activeButton == "Spherical",
@@ -330,7 +407,9 @@ fun SimulationScreen(onBack: () -> Unit) {
                                     .padding(4.dp)
                                     .size(sphericalSize)
                                     .then(
-                                        if (activeButton == "Spherical" || !animateText) Modifier else Modifier.alpha(0f)
+                                        if (activeButton == "Spherical" || !animateText) Modifier else Modifier.alpha(
+                                            0f
+                                        )
                                     ),
                                 shape = CircleShape,
                                 contentPadding = PaddingValues(0.dp),
@@ -350,9 +429,15 @@ fun SimulationScreen(onBack: () -> Unit) {
                             Button(
                                 onClick = {
                                     if (!animateText) {
-                                        val suggestion = suggestions[2]
-                                        actionMessage = suggestion.replace(":item", label) // Replace :item with the detected label
-                                        activeButton = "Lateral"
+                                        scope.launch {
+                                            val suggestion = suggestions[2]
+                                            actionMessage = suggestion.replace(":item", label)
+                                            activeButton = "Lateral"
+                                            sendKeywordToServer(activeButton!!.lowercase()) { response ->
+                                                predictedClass = response
+                                            }
+                                            delay(1000)
+                                        }
                                     }
                                 },
                                 enabled = !animateText || activeButton == "Lateral",
@@ -360,7 +445,9 @@ fun SimulationScreen(onBack: () -> Unit) {
                                     .padding(4.dp)
                                     .size(lateralSize)
                                     .then(
-                                        if (activeButton == "Lateral" || !animateText) Modifier else Modifier.alpha(0f)
+                                        if (activeButton == "Lateral" || !animateText) Modifier else Modifier.alpha(
+                                            0f
+                                        )
                                     ),
                                 shape = CircleShape,
                                 contentPadding = PaddingValues(0.dp),
