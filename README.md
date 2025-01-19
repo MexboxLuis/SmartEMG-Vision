@@ -58,19 +58,13 @@ SMARTEMG Vision es una aplicación Android diseñada como un simulador para asis
 
 ## Descarga PDF
 
-Si prefieres leer más sobre el funcionamiento del simulador o deseas obtener detalles técnicos adicionales, puedes descargar el [PDF del proyecto aquí](#). *(Recuerda incluir un enlace real al PDF aquí)*.
-
----
-
-## Contribuciones
-
-Las contribuciones son bienvenidas. Si deseas colaborar, por favor sigue las pautas establecidas en el archivo `CONTRIBUTING.md`.
+Si prefieres leer más sobre el funcionamiento del simulador o deseas obtener detalles técnicos adicionales, puedes descargar el [PDF del proyecto aquí](#). *(Pronto ...)*.
 
 ---
 
 ## Autor
 
-Luis - [GitHub](https://github.com/MexboxLuis)
+| Luis Alfredo - [GitHub](https://github.com/MexboxLuis) | Iker Antonio - [GitHub](https://github.com/uumaaa) |
 
 ---
 
