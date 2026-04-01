@@ -1,75 +1,110 @@
+# Welcome to SmartEMG Vision 🦾
 
-# SMARTEMG Vision
+[![Kotlin](https://img.shields.io/badge/Kotlin-0095D5?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?style=flat-square&logo=android&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Python](https://img.shields.io/badge/Python-14354C?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-%23FF6F00.svg?style=flat-square&logo=TensorFlow&logoColor=white)](https://www.tensorflow.org/)
 
-SMARTEMG Vision es una aplicación Android diseñada como un simulador para asistir a personas con movilidad reducida mediante el análisis de señales EMG y la detección en tiempo real de objetos utilizando inteligencia artificial. Este proyecto prototipo permite la interacción con el entorno a través de señales EMG y tecnología de visión artificial, siendo una herramienta útil para la rehabilitación de personas con discapacidades motoras.
+Welcome to the **SmartEMG Vision** repository. This Android application serves as a real-time simulator designed to assist individuals with reduced mobility. It integrates electromyography (EMG) signal classification with AI-powered computer vision to facilitate contextual interactions with the user's environment.
 
----
+This project was developed at the **Instituto Politécnico Nacional (IPN)** as a prototype for accessible technology.
 
-## Funcionalidades Principales
-
-1. **Simulador de Análisis de Señales EMG**  
-   - Simula la captura y procesamiento de señales EMG para interpretar intenciones de movimiento.  
-   - Convierte las señales EMG en comandos para controlar dispositivos o interfaces simuladas.  
-   - Ofrece retroalimentación en tiempo real sobre la actividad muscular del usuario.
-
-2. **Simulador de Detección de Objetos con IA**  
-   - Utiliza un modelo de inteligencia artificial para simular la detección de objetos en el entorno del usuario.  
-   - Ofrece una representación visual de los objetos reconocidos y sus ubicaciones.  
-   - Permite al usuario interactuar con objetos detectados de forma simulada, mejorando la experiencia de rehabilitación.
+🎥 **[Watch the Video Demo Here](#)**  
+📄 **[Download the Project PDF Here](#)** 
 
 ---
 
-## Pantallas de la Aplicación
+## 📚 About The Project
 
-1. **Pantalla Principal**  
-   - Muestra el estado actual de las señales EMG simuladas y los objetos detectados virtualmente.  
-   - Ofrece controles para iniciar o detener el simulador de análisis de señales EMG.  
-   - Presenta una lista de objetos simulados que el sistema reconoce, con opciones para interactuar con ellos.
-
-2. **Configuración**  
-   - Permite ajustar parámetros de sensibilidad y umbrales para la simulación de señales EMG.  
-   - Configura las preferencias para la simulación de detección de objetos, como tipos de objetos a reconocer.  
-   - Personaliza la interfaz de usuario para mejorar la experiencia del simulador.
+| Feature                | Details |
+| ---------------------- | ------- |
+| 🎯 **Purpose**         | To assist individuals with motor disabilities by translating muscle signals into commands interacting with visually detected objects. |
+| ⚙️ **Architecture**     | Client-Server architecture. The Android app sends camera frames and commands via HTTP to local Python servers running the AI models. |
+| 🧠 **AI Integration**   | Utilizes a custom TensorFlow/Keras neural network for EMG signal classification and YOLOv8 for real-time object detection. |
+| 🔄 **Core Operations** | Real-time camera feed analysis, bounding box rendering, simulated EMG signal processing, and contextual UI action suggestions. |
 
 ---
 
-## Requisitos
+## 🚀 Tech Stack
 
-- **Android Studio**: Instalado y configurado en tu sistema.  
-- **Dispositivo Android**: Con Android 8.0 (API 26) o superior.  
-- **Dependencias**: Asegúrate de tener las dependencias necesarias configuradas en el archivo `build.gradle`.
+### Android & UI
 
----
+![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
+![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?style=for-the-badge&logo=android&logoColor=white)
 
-## Instalación
+- **Kotlin & Jetpack Compose:** The UI is built using Compose, providing reactive animations and dynamic state management based on server responses.
+- **CameraX:** Captures real-time image frames from the device camera for continuous analysis.
+- **OkHttp:** Manages asynchronous multi-part HTTP requests to send image frames and receive predictions from the backend.
 
-1. Clona el repositorio:  
-   ```bash
-   git clone https://github.com/MexboxLuis/SMARTEMG-Vision.git
-   ```
+### Backend & AI Models
 
-2. Abre el proyecto en Android Studio.
+![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
+![YOLO](https://img.shields.io/badge/YOLOv8-00FFFF?style=for-the-badge&logo=yolo&logoColor=black)
 
-3. Sincroniza el proyecto con Gradle.
-
-4. Ejecuta la aplicación en un emulador o dispositivo físico.
-
----
-
-## Descarga PDF
-
-Si prefieres leer más sobre el funcionamiento del simulador o deseas obtener detalles técnicos adicionales, puedes descargar el [PDF del proyecto aquí](#). *(Pronto ...)*.
+- **Python & Flask:** Two lightweight local servers (`server.py` and `smg_predict.py`) handle incoming requests, process data, and return JSON responses.
+- **Ultralytics YOLOv8:** Processes incoming JPEG frames to detect and locate specific object classes.
+- **TensorFlow & Scikit-learn:** A pre-trained `.keras` model classifies simulated EMG signals into grasp types using standardized data.
 
 ---
 
-## Autor
+## 🔧 Highlighted Features
 
-| Luis Alfredo - [GitHub](https://github.com/MexboxLuis) | Iker Antonio - [GitHub](https://github.com/uumaaa) |
+| Feature | Description |
+|--------|------------|
+| **Real-Time Object Detection** | The app overlays custom bounding boxes on the camera preview, identifying objects and confidence scores. |
+| **Contextual Suggestions** | Based on detected objects, the app proposes contextual actions. |
+| **EMG Grasp Simulation** | Simulates and validates EMG signals through communication with the backend. |
+| **Visual Feedback System** | Provides immediate feedback indicating whether the predicted movement matches the intended action. |
 
 ---
 
-## Licencia
+## 📸 Screenshots
 
-Este proyecto está bajo la licencia [MIT](LICENSE).
+- ![Welcome Screen](assets/WelcomeScreen.jpeg)
+- ![Camera Preview & YOLO Boxes](assets/YoloDetection.jpeg)
+- ![Action Suggestions](assets/ActionSuggestions.jpeg)
+- ![Prediction Result](assets/PredictionResult.jpeg)
+
+---
+
+## 🛠️ How to Run Locally
+
+### 1. Backend Setup (Python)
+
+```bash
+git clone https://github.com/MexboxLuis/SMARTEMG-Vision.git
+cd SMARTEMG-Vision/app/src/main/java/com/example/smartemgvision/model
 ```
+
+### Install dependencies
+
+```bash
+pip install flask ultralytics numpy opencv-python pandas tensorflow scikit-learn
+```
+
+### Start servers
+
+```bash
+python server.py
+```
+
+```bash
+python smg_predict.py
+```
+
+---
+
+### 2. Android App Setup
+
+- Open Android Studio and load the project.
+- Sync Gradle files.
+- Run on emulator or device.
+- Grant camera permissions.
+
+---
+
+## 🤝 Authors
+
+- [Luis Alfredo](https://github.com/MexboxLuis)
+- [Iker Antonio](https://github.com/uumaaa)
 
